@@ -91,12 +91,13 @@ save_million_events_test_() ->
           ?SETUP_SINGLE(
             begin
               lists:foreach(
-                fun(X) -> simple_cache:get(?CACHE_NAME, 1, X, fun() -> true end) end,
+                fun(X) -> simple_cache:get(?CACHE_NAME, 10000, X, fun() -> true end) end,
                 lists:seq(1, 100000)
               ),
               timer:sleep(10000),
+              simple_cache_expirer:stop(),
               ok = simple_cache:close(?CACHE_NAME),
-              {ok, Ref} = simple_cache:init(?CACHE_NAME),
+              {ok, Ref} = setup(),
               Info = dets:info(Ref),
               error_logger:info_msg("Cache info: ~p~n", [Info])
             end
