@@ -21,6 +21,10 @@ getdeps:
 compile:
 	@${REBAR} compile
 
+# Test.
+test:
+	@${REBAR} compile eunit
+
 # This one runs without a release.
 shell: compile
 	${ERL} ${ERLARGS}

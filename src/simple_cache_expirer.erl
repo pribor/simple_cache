@@ -32,7 +32,7 @@
 %% Exports.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Public API.
--export([start_link/0]).
+-export([start_link/0, stop/0]).
 
 %%% gen_server behavior
 -export([
@@ -46,7 +46,8 @@
 %% @doc Starts the gen_server.
 -spec start_link() -> {ok, pid()} | ignore | {error, term()}.
 start_link() ->
-  gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+%%  gen_server:start_link({local, ?MODULE}, ?MODULE, [], []).
+  gen_server:start({local, ?MODULE}, ?MODULE, [], []).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% gen_server API.
@@ -82,3 +83,6 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
   {ok, State}.
 
+-spec stop() -> ok.
+stop() ->
+  gen_server:stop(?MODULE).
