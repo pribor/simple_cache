@@ -30,7 +30,7 @@
 %% Exports.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Public API.
--export([init/1]).
+-export([init/1, init/2]).
 -export([get/4]).
 -export([flush/1, flush/2]).
 -export([close/1, delete/1]).
@@ -39,14 +39,21 @@
 %% Public API.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% @doc Initializes a cache.
--spec init(atom()) -> {ok, term()}.
+-spec init(term()) -> {ok, term()}.
 init(CacheName) ->
+  init(CacheName, CacheName).
+
+%% @doc Initializes a cache.
+-spec init(term(), file:name()) -> {ok, term()}.
+init(CacheName, Filename) ->
   RealName = ?NAME(CacheName),
-  {ok, Ref} = dets:open_file(RealName, []),
+  {ok, Ref} = dets:open_file(RealName, [
+    {file, Filename},
+    {min_no_slots, 5000000}
+  ]),
   remove_expired(Ref),
-%%  RealName = dets:new(RealName, [
-%%    named_table, {read_concurrency, true}, public, {write_concurrency, true}
-%%  ]),
+  Info = dets:info(Ref),
+  error_logger:info_msg("Cache ~p (~p) loaded: ~p~n", [CacheName, Filename, Info]),
   {ok, Ref}.
 
 -spec remove_expired(atom()) -> non_neg_integer() | {'error', term()}.
@@ -95,12 +102,13 @@ expire_timestamp(LifeTime) ->
 timestamp() ->
   os:system_time(millisecond).
 
-
 -spec close(term()) -> ok | {error, term()}.
 close(CacheName) ->
   dets:close(?NAME(CacheName)).
 
 -spec delete(term()) -> ok | {error, term()}.
 delete(CacheName) ->
+  Info = dets:info(?NAME(CacheName)),
   ok = close(CacheName),
-  file:delete(?NAME(CacheName)).
+  {filename, Filename} = lists:keyfind(filename, 1, Info),
+  file:delete(Filename).

@@ -6,7 +6,7 @@
 -export([]).
 
 -define(CACHE_NAME, test_cache).
--define(SETUP(F), {setup, fun setup/0, fun cleanup/1, ?_test(F)}).
+-define(SETUP(F), {setup, fun setup/0, fun cleanup/1, F}).
 -define(SETUP_SINGLE(Expr),
         begin
           setup(),
@@ -68,7 +68,6 @@ remove_expired_test() ->
       ?assertEqual(1, C1),
       simple_cache_expirer:stop(),
       ok = simple_cache:close(?CACHE_NAME),
-
       timer:sleep(150),
 
       setup(),
@@ -79,3 +78,29 @@ remove_expired_test() ->
       ?assertEqual(1, B2),
       ?assertEqual(1, C2)
     end).
+
+filename_test() ->
+  Filename = "./test_cache",
+  simple_cache:init(?CACHE_NAME, Filename),
+  simple_cache:close(?CACHE_NAME),
+  ?assertEqual(ok, file:delete(Filename)).
+
+save_million_events_test_() ->
+      {timeout, 300,
+        ?_test(
+          ?SETUP_SINGLE(
+            begin
+              lists:foreach(
+                fun(X) -> simple_cache:get(?CACHE_NAME, 1, X, fun() -> true end) end,
+                lists:seq(1, 100000)
+              ),
+              timer:sleep(10000),
+              ok = simple_cache:close(?CACHE_NAME),
+              {ok, Ref} = simple_cache:init(?CACHE_NAME),
+              Info = dets:info(Ref),
+              error_logger:info_msg("Cache info: ~p~n", [Info])
+            end
+          )
+        )
+      }.
+
